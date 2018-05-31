@@ -1,0 +1,525 @@
+
+<html>
+   <head>
+      <style type="text/css">
+         .sikuli-code {
+            font-size: 20px;
+            font-family: "Osaka-mono", Monospace;
+            line-height: 1.5em;
+            display:table-cell;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            width: 99%;   /* remove horizontal scroll-bar when viewing in IE7 */
+         }
+         .sikuli-code img {
+            vertical-align: middle;
+            margin: 2px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            -moz-box-shadow: 1px 1px 1px gray;
+            -webkit-box-shadow: 1px 1px 2px gray;
+         }
+         .kw {
+            color: blue;
+         }
+         .skw {
+            color: rgb(63, 127, 127);
+         }
+
+         .str {
+            color: rgb(128, 0, 0);
+         }
+
+         .dig {
+            color: rgb(128, 64, 0);
+         }
+
+         .cmt {
+            color: rgb(200, 0, 200);
+         }
+
+         h2 {
+            display: inline;
+            font-weight: normal;
+         }
+
+         .info {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+            display: none;
+         }
+
+         a {
+            color: #9D2900;
+         }
+
+         body {
+            font-family: "Trebuchet MS", Arial, Sans-Serif;
+         }
+
+      </style>
+   </head>
+<body>
+<div class="info">
+<h2>autoSITS.sikuli</h2> <a href="autoSITS.zip">(Download this script)</a>
+</div>
+<pre class="sikuli-code">
+<span class="cmt">#required in order to use 'string.ascii_lowercase'</span>
+<span class="kw">import</span> string
+<span class="kw">import</span> time
+
+<span class="cmt">#logging</span>
+Settings.UserLogs = True
+Settings.UserLogPrefix = <span class="str">'user'</span>
+Settings.UserLogTime = True
+
+<span class="cmt">#global variables</span>
+userDetails = [<span class="str">'number'</span>, <span class="str">'surname'</span>, <span class="str">'forname'</span>, <span class="str">'gender'</span>, <span class="str">'dob'</span>, <span class="str">'feestat'</span>, <span class="str">'MRC_course'</span>, <span class="str">'SRS_course'</span>, <span class="str">'block'</span>, <span class="str">'occurrence'</span>, <span class="str">'year'</span>, <span class="str">'mod'</span>, <span class="str">'SCE_UDF6'</span>, <span class="str">'NAT_GEGC'</span>]
+sitsVersion = [<span class="str">'Dev'</span>, <span class="str">'Test'</span>]
+col = <span class="dig">0</span>
+row = <span class="dig">3</span>
+maxRow = <span class="dig">0</span>
+refDoc = None
+user = None
+QAS = None
+CAPS = None
+ATR = None
+ATRfail = None
+timeStamp = time.strftime(<span class="str">"%H.%M"</span>)
+
+<span class="cmt">#multiple TABs</span>
+<span class="kw">def</span> doTab(n):
+    i = <span class="dig">0</span>
+    <span class="kw">while</span> i &lt; n:
+        <span class="skw">type</span> (Key.TAB)
+        i += <span class="dig">1</span>
+
+<span class="cmt">#multiple Down Keys</span>
+<span class="kw">def</span> doKeyDown(n):
+    i = <span class="dig">0</span>
+    <span class="kw">while</span> i &lt; n:
+        <span class="skw">type</span> (Key.DOWN)
+        i += <span class="dig">1</span>
+
+<span class="cmt">#open SITS Dev or Test and prompt to log in</span>
+<span class="kw">def</span> openSITS():
+    SITS = select(<span class="str">'Dev or Test?'</span>, <span class="str">'SITS Version'</span>, options = sitsVersion)
+    <span class="kw">if</span> SITS == <span class="str">'Dev'</span>:
+        App.open(<span class="str">'\\\\atwin-sitst2\\sits_clients\\vision\\dev\\uniface\\bin\\uniface.exe /asn=\\\\atwin-sitst2\\sits_clients\\vision\\dev\\adm\\uclisipr.asn winlog logo=\\\\atwin-sitst2\\sits_clients\\vision\\dev\\adm\\SITS-Login-LIVE.png'</span>)
+        <span class="skw">wait</span>(<img src="1524838031037.png" />, FOREVER)
+        <span class="skw">wait</span>(<span class="dig">0.5</span>)
+        <span class="skw">popup</span>(<span class="str">'Please enter your SITS Dev password'</span>)
+        <span class="skw">wait</span>(<img src="1524653569015.png" />, FOREVER)
+
+    <span class="kw">if</span> SITS == <span class="str">'Test'</span>:
+        App.open(<span class="str">'\\\\atwin-sitsd2\\sits_clients\\vision\\live\\uniface\\bin\\uniface.exe /asn=\\\\atwin-sitsd2\\sits_clients\\vision\\live\\adm\\\uclisipr.asn winlog'</span>)
+        <span class="skw">wait</span>(<img src="1524838031037.png" />, FOREVER)
+        <span class="skw">wait</span>(<span class="dig">0.5</span>)
+        <span class="skw">popup</span>(<span class="str">'Please enter your SITS Test password'</span>)
+        <span class="skw">wait</span>(<img src="1524653569015.png" />, FOREVER)
+
+<span class="cmt">#function to open the reference excel doc and prompt to re-enter doc name if not found</span>
+<span class="kw">def</span> openRefDoc(refDoc):
+    i = <span class="dig">0</span>
+    <span class="kw">while</span> i &lt; <span class="dig">1</span>:
+        <span class="skw">type</span>(<span class="str">'r'</span>, KeyModifier.WIN)
+        paste(refDoc)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="skw">wait</span>(<span class="dig">2</span>)
+        <span class="kw">if</span> exists(<img src="1524643294341.png" /> <span class="kw">or</span> <img src="1524730349042.png" />):
+            i = <span class="dig">1</span>
+            Debug.user(<span class="str">'%s opened'</span>,refDoc)
+
+        <span class="kw">elif</span> exists(<img src="1524730602718.png" />):
+            Debug.user(<span class="str">'%s not found'</span>,refDoc)
+            <span class="skw">type</span>(Key.ENTER)
+            <span class="skw">popup</span>(<span class="str">"file not found"</span>)
+            refDoc = <span class="skw">input</span>(<span class="str">'Reference Excel Document name (without file extension)'</span>)
+            refDoc = <span class="str">'%userprofile%\\documents\\'</span> + refDoc + <span class="str">'.xlsx'</span>
+
+
+<span class="cmt">#function to store the contents of an entire specific row in the 'userDetails' list (columns A - J)</span>
+<span class="kw">def</span> storeDetails(x, y):
+    App.focus(<span class="str">'Excel'</span>)
+    <span class="kw">while</span> (x &lt;= <span class="dig">12</span>):
+        copyCell(string.ascii_lowercase[x], y)
+        userDetails[x] = Env.getClipboard()
+        x += <span class="dig">1</span>
+    <span class="cmt">#Debug.user(userDetails[0] + ' - data stored in memory')</span>
+    <span class="kw">global</span> row
+    row += <span class="dig">1</span>
+
+<span class="cmt">#function to copy the contents of a specific cell to the clipboard</span>
+<span class="kw">def</span> copyCell(x, y):
+    <span class="skw">type</span>(<span class="str">'g'</span>, Key.CTRL)
+    <span class="skw">type</span>(str(x) + str(y) + Key.ENTER)
+    <span class="skw">wait</span>(<span class="dig">0.05</span>)
+    <span class="skw">type</span>(<span class="str">'c'</span>, KeyModifier.CTRL)
+    <span class="skw">wait</span>(<span class="dig">0.15</span>)
+
+<span class="cmt">#function to enter QAS details</span>
+<span class="kw">def</span> enterQASDetails():
+    <span class="kw">if</span> exists(<img src="1524653530693.png" />):
+        exit
+    <span class="kw">else</span>:
+        <span class="kw">if</span> exists(<img src="1524653569015.png" />):
+            <span class="skw">type</span>(<span class="str">'qas'</span> + Key.TAB)
+            <span class="skw">wait</span>(<img src="1524653530693.png" />)
+            exit
+    <span class="skw">type</span>(Key.F12)
+    <span class="skw">wait</span>(<span class="dig">0.3</span>)
+    <span class="skw">type</span>(Key.ENTER)
+    paste(userDetails[<span class="dig">6</span>])<span class="cmt">#MRC course</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">wait</span>(<span class="dig">1</span>)
+    <span class="kw">if</span> exists(<img src="1524748542437.png" />):
+        <span class="skw">type</span>(Key.TAB + Key.ENTER)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">8</span>])<span class="cmt">#BLOK   </span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">9</span>])<span class="cmt">#Occurrence</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">11</span>])<span class="cmt">#Mode of Attendance</span>
+    doTab(<span class="dig">3</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">10</span>])<span class="cmt">#Year</span>
+    doTab(<span class="dig">2</span>)
+    <span class="kw">if</span> exists(<img src="1524748542437.png" />):
+        <span class="skw">type</span>(Key.TAB + Key.ENTER)
+    doTab(<span class="dig">2</span>)
+    <span class="kw">if</span> exists(<img src="1524748542437.png" />):
+        <span class="skw">type</span>(Key.TAB + Key.ENTER)
+    doTab(<span class="dig">4</span>)
+    paste(userDetails[<span class="dig">0</span>])<span class="cmt">#Number</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">1</span>])<span class="cmt">#Surname</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">2</span>])<span class="cmt">#Forename</span>
+    doTab(<span class="dig">2</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">3</span>])<span class="cmt">#Title</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">wait</span>(<span class="dig">0.2</span>)
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">4</span>])<span class="cmt">#DOB</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(Key.F7)
+    paste(userDetails[<span class="dig">5</span>])<span class="cmt">#Fee Status</span>
+    <span class="skw">click</span>(<img src="1524745563338.png" />)
+    <span class="skw">wait</span>(<span class="dig">2</span>)
+
+<span class="cmt">#QAS Success Scenarios</span>
+    <span class="kw">if</span> exists(<img src="1525960954443.png" />,<span class="dig">0.2</span>):
+        doTab(<span class="dig">2</span>)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="skw">wait</span>(<img src="1525951858086.png" />,FOREVER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS COMPLETED successfully'</span>)
+        <span class="skw">wait</span>(<span class="dig">1</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1524746160161.png" />,<span class="dig">0.2</span>):
+        <span class="skw">click</span>(<img src="1524746181629.png" />)
+        <span class="skw">wait</span>(<img src="1525951858086.png" />,FOREVER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS COMPLETED successfully'</span>)
+        <span class="skw">wait</span>(<span class="dig">1</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1524747688423.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS SUCCESS (Student Number Already Exists, 2nd CAP Record Created)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1524747688423.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS SUCCESS (Student Number Already Exists, 2nd CAP Record Created)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1527158069042.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS SUCCESS (Student Number Already Exists, 2nd CAP Record Created)'</span>)
+        exit
+
+<span class="cmt">#QAS Failure Scenarios</span>
+    <span class="kw">elif</span> exists(<img src="1524745907937.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (UCAS course)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1525951561125.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (Mode of Attencance missing)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1525951615389.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (Academic Year missing)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1525951389270.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (Course ID not Valid)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1525951465804.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (Surname or DoB missing)'</span>)
+        exit
+
+    <span class="kw">elif</span> exists(<img src="1525951515498.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(Key.TAB)
+        <span class="skw">type</span>(Key.ENTER)
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (DoB Invalid)'</span>)
+        exit
+
+    <span class="kw">else</span>:
+        <span class="kw">global</span> QAS
+        QAS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - QAS FAILED (unknown error)'</span>)
+        exit
+
+    <span class="skw">type</span>(Key.F4) <span class="cmt">#close QAS</span>
+
+<span class="cmt">#function to update CAP Details</span>
+<span class="kw">def</span> enterCAPSDetails():
+    <span class="kw">if</span> exists(<img src="1525255114352.png" />):
+        exit
+    <span class="kw">else</span>:
+        <span class="kw">if</span> exists(<img src="1524653569015.png" />):
+            <span class="skw">type</span>(<span class="str">'CAPS'</span> + Key.TAB)
+            <span class="skw">wait</span>(<img src="1525255114352.png" />)
+            exit
+    <span class="skw">type</span>(Key.F12)
+    <span class="skw">wait</span>(<span class="dig">0.3</span>)
+    paste(userDetails[<span class="dig">0</span>])<span class="cmt">#ID</span>
+    doTab(<span class="dig">15</span>)
+    paste(userDetails[<span class="dig">6</span>])<span class="cmt">#MRC course</span>
+    <span class="skw">type</span>(Key.F5)
+    <span class="skw">wait</span>(<span class="dig">0.5</span>)
+    doTab(<span class="dig">7</span>)
+    <span class="skw">type</span>(<span class="str">'QV'</span>)<span class="cmt">#Qualification Status (Qualified)</span>
+    doTab(<span class="dig">13</span>)
+    <span class="skw">type</span>(<span class="str">'U'</span>)<span class="cmt">#Decision (Unconditional Offer)</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(<span class="str">'F'</span>)<span class="cmt">#Response (Firm)</span>
+    doTab(<span class="dig">1</span>)
+    <span class="skw">type</span>(<span class="str">'s'</span>, KeyModifier.CTRL)
+    <span class="skw">wait</span>(<span class="dig">1</span>)
+
+<span class="cmt">#CAPS Success Scenario</span>
+    <span class="kw">if</span> exists(<img src="1525952379949.png" />,<span class="dig">0.2</span>):
+        <span class="kw">global</span> CAPS
+        CAPS = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - CAPS UPDATED'</span>)
+        <span class="skw">wait</span>(<span class="dig">1</span>)
+        exit
+
+<span class="cmt">#CAPS Failure Scenario</span>
+    <span class="kw">elif</span> exists(<img src="1525952141546.png" />,<span class="dig">0.2</span>):
+        <span class="kw">global</span> CAPS
+        CAPS = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - CAPS FAILED (no changes made)'</span>)
+        exit
+
+    <span class="skw">type</span>(Key.F4) <span class="cmt">#close CAPS</span>
+
+<span class="cmt">#function to update ATR Details</span>
+<span class="kw">def</span> enterATRDetails():
+    <span class="kw">if</span> exists(<img src="1525952654814.png" />):
+        exit
+    <span class="kw">else</span>:
+        <span class="kw">if</span> exists(<img src="1524653569015.png" />):
+            <span class="skw">type</span>(<span class="str">'ATR'</span> + Key.TAB)
+            <span class="skw">wait</span>(<img src="1525952654814.png" />)
+            exit
+    paste(userDetails[<span class="dig">10</span>])<span class="cmt">#Year</span>
+    doTab(<span class="dig">4</span>)
+    paste(userDetails[<span class="dig">0</span>])<span class="cmt">#Number</span>
+    doTab(<span class="dig">5</span>)
+    paste(userDetails[<span class="dig">6</span>])<span class="cmt">#MRC course</span>
+    <span class="skw">type</span>(Key.F5)
+    <span class="skw">wait</span>(<span class="dig">0.3</span>)
+    <span class="skw">click</span>(<img src="1525953126635.png" />)
+    <span class="skw">wait</span>(<span class="dig">1</span>)
+
+<span class="cmt">#ATR Success Scenario</span>
+    <span class="kw">if</span> exists(<img src="1525955213623.png" />,<span class="dig">4</span>):
+        <span class="kw">global</span> ATR
+        ATR = <span class="str">'SUCCESS'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - ATR COMPLETED Successfully'</span>)
+        <span class="skw">wait</span>(<span class="dig">1</span>)
+        exit
+
+<span class="cmt">#ATR Failure Scenario</span>
+    <span class="kw">elif</span> exists(<img src="1525953285531.png" />,<span class="dig">0.2</span>):
+        <span class="skw">type</span>(<span class="str">'m'</span>, KeyModifier.CTRL) <span class="cmt">#open Message buffer</span>
+        <span class="cmt">#start triple click#</span>
+        <span class="skw">click</span>(<img src="1525959401097.png" />)
+        mouseDown(Button.LEFT)
+        mouseUp(Button.LEFT)
+        <span class="skw">wait</span>(<span class="dig">0.01</span>)
+        mouseDown(Button.LEFT)
+        mouseUp(Button.LEFT)
+        <span class="cmt">#end triple click#</span>
+        <span class="skw">type</span>(<span class="str">'c'</span>, KeyModifier.CTRL)
+        ATRfail = Env.getClipboard()
+        <span class="skw">type</span>(Key.F4) <span class="cmt">#close Message buffer</span>
+        <span class="kw">global</span> ATR
+        ATR = <span class="str">'FAIL'</span>
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - ATR FAILED ('</span> + ATRfail + <span class="str">')'</span>)
+        exit
+
+    <span class="skw">type</span>(Key.F4) <span class="cmt">#close CAPS</span>
+
+
+<span class="cmt">#function to update SCE Details</span>
+<span class="kw">def</span> enterSCEDetails():
+    <span class="kw">if</span> exists(<img src="1525949870304.png" />):
+        exit
+    <span class="kw">else</span>:
+        <span class="kw">if</span> exists(<img src="1524653569015.png" />):
+            <span class="skw">type</span>(<span class="str">'SCE'</span> + Key.TAB)
+            <span class="skw">wait</span>(<img src="1525949870304.png" />)
+            exit
+    <span class="skw">type</span>(Key.F12)
+    <span class="skw">wait</span>(<span class="dig">0.3</span>)
+    paste(userDetails[<span class="dig">0</span>])<span class="cmt">#ID</span>
+    <span class="skw">click</span>(<img src="1525963718523.png" />)
+    doKeyDown(<span class="dig">12</span>)
+    <span class="skw">type</span>(Key.ENTER)
+    <span class="skw">type</span>(Key.ENTER)
+    doTab(<span class="dig">4</span>)
+    paste(userDetails[<span class="dig">7</span>])<span class="cmt">#SRS course</span>
+    doTab(<span class="dig">1</span>)
+    paste(userDetails[<span class="dig">8</span>])<span class="cmt">#BLOK</span>
+    doTab(<span class="dig">1</span>)
+    paste(userDetails[<span class="dig">10</span>])<span class="cmt">#Year</span>
+    doTab(<span class="dig">1</span>)
+    paste(userDetails[<span class="dig">9</span>])<span class="cmt">#Occurrence</span>
+    <span class="skw">type</span>(Key.F5)
+    <span class="skw">wait</span>(<span class="dig">0.1</span>)
+    <span class="skw">click</span>(<img src="1525962023187.png" />)
+    <span class="skw">wait</span>(<span class="dig">1.5</span>)
+    <span class="kw">if</span> SITS == <span class="str">'Dev'</span>:
+        doTab(<span class="dig">5</span>)
+        exit
+    <span class="kw">elif</span> SITS == <span class="str">'Test'</span>:
+        doTab(<span class="dig">2</span>)
+        exit
+    <span class="skw">wait</span>(<span class="dig">0.5</span>)
+    paste(userDetails[<span class="dig">12</span>])<span class="cmt">#SCE_UDF6 New/Returning</span>
+    <span class="skw">wait</span>(<span class="dig">0.5</span>)
+    <span class="skw">click</span>(<img src="1525962494090.png" />)
+    <span class="skw">wait</span>(<span class="dig">0.5</span>)
+    <span class="skw">type</span>(<span class="str">'s'</span>, KeyModifier.CTRL) <span class="cmt">#save SCE</span>
+    <span class="skw">wait</span>(<span class="dig">1</span>)
+
+<span class="cmt">#SCE Success Scenario</span>
+    <span class="kw">if</span> exists(<img src="1525952379949.png" />,<span class="dig">0.5</span>):
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - SCE UPDATED'</span>)
+        exit
+
+<span class="cmt">#SCE Failure Scenario</span>
+    <span class="kw">elif</span> exists(<img src="1525952141546.png" />,<span class="dig">0.5</span>):
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - SCE FAILED (no changes made)'</span>)
+        exit
+
+<span class="cmt">#SCE Failure Scenario</span>
+    <span class="kw">elif</span> exists(<img src="1526569766560.png" />,<span class="dig">0.5</span>):
+        Debug.user(userDetails[<span class="dig">0</span>] + <span class="str">' - SCE FAILED (no changes made)'</span>)
+        exit
+
+    <span class="skw">type</span>(Key.F4) <span class="cmt">#close SCE</span>
+
+<span class="cmt">#User input to gather username (only used to create relitive path for loggin)</span>
+user = <span class="skw">input</span>(<span class="str">'Please ener your username'</span>)
+
+Debug.setUserLogFile(<span class="str">'C:\\users\\'</span> + user + <span class="str">'\\documents\\autoSITS-'</span> + timeStamp + <span class="str">'.log'</span>)
+
+Debug.user(<span class="str">'BEGIN'</span>)
+
+<span class="cmt">#User input to specify the reference document name and modify to</span>
+refDoc = <span class="skw">input</span>(<span class="str">'Reference Excel Document name (without file extension)'</span>)
+refDoc = <span class="str">'%userprofile%\\documents\\'</span> + refDoc + <span class="str">'.xlsx'</span>
+
+<span class="cmt">#Open the reference document</span>
+openRefDoc(refDoc)
+
+maxRow = int(<span class="skw">input</span>(<span class="str">'number of rows to process:'</span>))
+maxRow += <span class="dig">2</span>
+
+<span class="cmt">#User input to select SITS Version</span>
+SITS = select(<span class="str">'Dev or Test?'</span>, <span class="str">'SITS Version'</span>, options = sitsVersion)
+
+<span class="cmt">#Open SITS Dev</span>
+<span class="kw">if</span> SITS == <span class="str">'Dev'</span>:
+    openApp(<span class="str">'\\\\atwin-sitst2\\sits_clients\\vision\\dev\\uniface\\bin\\uniface.exe /asn=\\\\atwin-sitst2\\sits_clients\\vision\\dev\\adm\\uclisipr.asn winlog logo=\\\\atwin-sitst2\\sits_clients\\vision\\dev\\adm\\SITS-Login-LIVE.png'</span>)
+    <span class="skw">wait</span>(<img src="1524838031037.png" />, FOREVER)
+    Debug.user(<span class="str">'SITS Dev opened'</span>)
+    <span class="skw">popup</span>(<span class="str">"Please log in"</span>)
+    <span class="skw">wait</span>(<img src="1524653569015.png" />, FOREVER)
+    Debug.user(user + <span class="str">' logged in to SITS Dev'</span>)
+
+<span class="cmt">#Open SITS Test </span>
+<span class="kw">if</span> SITS == <span class="str">'Test'</span>:
+    openApp(<span class="str">'\\\\atwin-sitsd2\\sits_clients\\vision\\live\\uniface\\bin\\uniface.exe /asn=\\\\atwin-sitsd2\\sits_clients\\vision\\live\\adm\\\uclisipr.asn winlog'</span>)
+    <span class="skw">wait</span>(<img src="1524838031037.png" />, FOREVER)
+    Debug.user(<span class="str">'SITS Test opened'</span>)
+    <span class="skw">popup</span>(<span class="str">'Please log in'</span>)
+    <span class="skw">wait</span>(<img src="1524653569015.png" />, FOREVER)
+    Debug.user(user + <span class="str">' logged in to SITS Test'</span>)
+
+<span class="cmt">#Store row of data from the reference document, enter data into QAS then loop for the number of rows specified</span>
+<span class="kw">while</span> (row &lt;= maxRow):
+    storeDetails(col, row)
+    App.focus(<span class="str">'SITS:Vision'</span>)
+    enterQASDetails()
+    <span class="kw">if</span> QAS == <span class="str">'SUCCESS'</span>:
+        enterCAPSDetails()
+        <span class="kw">if</span> CAPS == <span class="str">'SUCCESS'</span>:
+            enterATRDetails()
+            <span class="kw">if</span> ATR == <span class="str">'SUCCESS'</span>:
+                enterSCEDetails()
+
+Debug.user(<span class="str">'END'</span>)
+<span class="skw">popup</span>(<span class="str">'Program completed successfully. Please check the log file for any errors: C:\\users\\'</span> + user + <span class="str">'\\documents\\autoSITS-'</span> + timeStamp + <span class="str">'.log'</span>)
+exit(<span class="dig">0</span>)
+</pre>
+</body>
+</html>
